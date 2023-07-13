@@ -63,7 +63,7 @@ void OCVProcessor::findItemsAndSubimage(OCVPrivateResult& result, cv::Mat &greys
             cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
             
             if (maxval >= settings.thresholdMin) {
-                OCVLog("%s %i, %lf %lf", model->key.c_str(), scaleIndex, minval, maxval);
+//                OCVLog("%s %i, %lf %lf", model->key.c_str(), scaleIndex, minval, maxval);
                 
                 if (result.items.size() == 0 || result.items[result.items.size() - 1].model != model) {
                     OCVItemPrivateResult item(model);
@@ -72,7 +72,7 @@ void OCVProcessor::findItemsAndSubimage(OCVPrivateResult& result, cv::Mat &greys
                 result.items[result.items.size() - 1].matchPercent = MAX(maxval, result.items[result.items.size() - 1].matchPercent);
                 
                 if (maxval >= settings.thresholdFire && maxval > croppedImageMatThresholdFire) {
-                    OCVLog("CROPPED: %s %i", model->key.c_str(), scaleIndex);
+                    OCVLog("DETECTED: %s %i", model->key.c_str(), scaleIndex);
                     croppedImageMatThresholdFire = maxval;
                     cv::Rect crop(maxloc.x, maxloc.y, testImageMat.cols, testImageMat.rows);
                     result.imageMat = cv::Mat(greyscaleImageMat, crop);
@@ -115,26 +115,26 @@ void OCVProcessor::findMistakes(OCVPrivateResult& result, std::vector<OCVContour
         
         VPInt hungarianResult = hungarian(matrix);
         
-        for (int i = 0; i < matrix.size(); i++) {
-            NSString *str = @"";
-            for (int j = 0; j < matrix[i].size(); j++) {
-                str = [str stringByAppendingFormat:@" %i", matrix[i][j]];
-            }
-            OCVLog("%@", str);
-        }
+//        for (int i = 0; i < matrix.size(); i++) {
+//            NSString *str = @"";
+//            for (int j = 0; j < matrix[i].size(); j++) {
+//                str = [str stringByAppendingFormat:@" %i", matrix[i][j]];
+//            }
+//            OCVLog("%@", str);
+//        }
         
         int mistakes = 0;
         for (int i = 0; i < hungarianResult.size(); i++) {
             int second = hungarianResult[i].second;
             int first = hungarianResult[i].first;
             int res = matrix[first][second];
-            OCVLog("%i %i = %i", second, first, res);
+//            OCVLog("%i %i = %i", second, first, res);
             mistakes += res;
         }
         
         itemResult->matrix = matrix;
         itemResult->mistakes = mistakes;
-        OCVLog("%s mistakes = %i", itemResult->model->key.c_str(), mistakes);
+//        OCVLog("%s mistakes = %i", itemResult->model->key.c_str(), mistakes);
     }
 }
 
@@ -165,7 +165,7 @@ void OCVProcessor::findMistakes(OCVResults& result, OCVPrivateResult& privateRes
         OCVItemPrivateResult* itemResult = &privateResult.items[resultIndex];
         int maxMistakes = itemResult->matrix.size() * 0.5;
         if (itemResult->mistakes > maxMistakes) {
-            OCVLog("REMOVED: %s mistakes %i / %i (too many mistakes)", itemResult->model->key.c_str(), itemResult->mistakes, (int)itemResult->matrix.size());
+//            OCVLog("REMOVED: %s mistakes %i / %i (too many mistakes)", itemResult->model->key.c_str(), itemResult->mistakes, (int)itemResult->matrix.size());
             privateResult.items.erase(privateResult.items.begin() + resultIndex);
         }
     }
@@ -247,7 +247,7 @@ void OCVProcessor::debugPreviewResults(OCVResults &result, OCVPrivateResult& pri
             int second = hungarianResult[i].second;
             int first = hungarianResult[i].first;
             int res = itemResult->matrix[first][second];
-            OCVLog("%i %i = %i", second, first, res);
+//            OCVLog("%i %i = %i", second, first, res);
             
             if (res == 0) {
                 if (first < itemResult->model->ocvContours.size() && second < ocvContoursFixed.size()) {
