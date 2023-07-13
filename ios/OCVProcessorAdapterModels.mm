@@ -5,8 +5,6 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
-#ifndef IOS_SIMULATOR
-
 #import "OCVProcessorAdapterModels.hpp"
 
 @implementation OCVAdapterImageModel
@@ -47,5 +45,3 @@
     return self;
 }
 @end
-
-#endif // IOS_SIMULATOR

@@ -5,8 +5,6 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
-#ifndef IOS_SIMULATOR
-
 #import "OCVProcessorAdapter.hpp"
 #import "OCVProcessor.h"
 #import <opencv2/imgcodecs/ios.h>
@@ -77,5 +75,3 @@
 }
 
 @end
-
-#endif // IOS_SIMULATOR

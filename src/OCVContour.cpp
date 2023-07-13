@@ -5,8 +5,6 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
-#ifndef IOS_SIMULATOR
-
 #import "OCVContour.h"
 
 std::vector<OCVContour> convertContours(const std::vector<std::vector<cv::Point>> &contours) {
@@ -45,5 +43,3 @@ std::vector<OCVContour> scaleContours(std::vector<OCVContour> cvContoursOld, dou
     }
     return cvContours;
 }
-
-#endif // IOS_SIMULATOR
