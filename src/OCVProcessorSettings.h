@@ -5,6 +5,7 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
+#ifndef IOS_SIMULATOR
 #ifndef OCVProcessorSettings_h
 #define OCVProcessorSettings_h
 
@@ -23,3 +24,4 @@ struct OCVProcessorSettings {
 };
 
 #endif // OCVProcessorSettings_h
+#endif // IOS_SIMULATOR

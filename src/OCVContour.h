@@ -5,6 +5,7 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
+#ifndef IOS_SIMULATOR
 #ifndef OCVContour_h
 #define OCVContour_h
 
@@ -22,3 +23,4 @@ extern std::vector<OCVContour> convertContours(const std::vector<std::vector<cv:
 extern std::vector<OCVContour> scaleContours(std::vector<OCVContour> cvContoursOld, double k);
 
 #endif // OCVContour_h
+#endif // IOS_SIMULATOR

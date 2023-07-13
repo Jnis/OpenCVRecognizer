@@ -5,6 +5,8 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
+#ifndef IOS_SIMULATOR
+
 #import "OCVProcessor.h"
 #import <opencv2/opencv2.h>
 #import "OCVHungarianAlgorithm.h"
@@ -282,3 +284,5 @@ void OCVProcessor::debugPreviewResults(OCVResults &result, OCVPrivateResult& pri
 //                cv::line(ooo, cv::Point(center.x, center.y),
 //                         cv::Point(center.x + vx * 200, center.y + vy * 200), cv::Scalar(0,50,255));
 //
+
+#endif // IOS_SIMULATOR

@@ -5,6 +5,7 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
+#ifndef IOS_SIMULATOR
 #ifndef OCVProcessor_h
 #define OCVProcessor_h
 
@@ -41,3 +42,4 @@ private:
 };
 
 #endif // OCVProcessor_h
+#endif // IOS_SIMULATOR

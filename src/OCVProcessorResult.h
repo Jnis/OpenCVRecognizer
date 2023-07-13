@@ -5,6 +5,7 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
+#ifndef IOS_SIMULATOR
 #ifndef OCVProcessorResult_h
 #define OCVProcessorResult_h
 
@@ -24,3 +25,4 @@ struct OCVResults {
 };
 
 #endif // OCVProcessorResult_h
+#endif // IOS_SIMULATOR

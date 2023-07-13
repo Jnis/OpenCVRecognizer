@@ -5,13 +5,15 @@
 //  Created by Yanis Plumit on 04.07.2023.
 //
 
+#ifndef IOS_SIMULATOR
+
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface OCVAdapterImageModel : NSObject
 @property(nonatomic, strong) NSString *key;
-@property(nonatomic, assign) UIImage *image;
+@property(nonatomic, strong) UIImage *image;
 - (instancetype)initWithImage:(UIImage*)image key:(NSString*)key;
 @end
 
@@ -29,3 +31,5 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif // IOS_SIMULATOR
