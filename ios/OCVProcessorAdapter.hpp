@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OCVProcessorAdapter : NSObject
 - (instancetype)initWithModels:(NSArray<OCVAdapterImageModel*>*)models;
-- (OCVAdapterResults*)processImage:(UIImage*)image;
+- (OCVAdapterResults*)processImage:(UIImage*)image isDebug:(BOOL)isDebug;
 @end
 
 NS_ASSUME_NONNULL_END

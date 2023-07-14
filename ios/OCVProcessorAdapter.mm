@@ -56,10 +56,10 @@
     delete self.processor;
 }
 
-- (OCVAdapterResults*)processImage:(UIImage*)image {
+- (OCVAdapterResults*)processImage:(UIImage*)image isDebug:(BOOL)isDebug {
     cv::Mat imageMat;
     UIImageToMat(image, imageMat);
-    OCVResults result = self.processor->processImage(imageMat, true);
+    OCVResults result = self.processor->processImage(imageMat, isDebug);
     NSMutableArray<OCVAdapterItemResult *> *items = [NSMutableArray array];
     for (int i = 0; i < result.items.size(); i++) {
         [items addObject:[[OCVAdapterItemResult alloc] initWithKey:[NSString stringWithCString:result.items[i].key.c_str()
