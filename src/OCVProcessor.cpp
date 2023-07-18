@@ -90,7 +90,7 @@ void OCVProcessor::prepareHungarianMatrix(VVInt& matrix, OCVItemPrivateResult* i
     for (int i = 0; i < n; i++) {
         VInt v;
         for (int j = 0; j < n; j++) {
-            BOOL isDetected = false;
+            bool isDetected = false;
             
             if (i < itemResult->model->ocvContours.size() && j < ocvContours.size()) {
                 if (distance(itemResult->model->ocvContours[i].center, ocvContours[j].center) < r) {
@@ -175,8 +175,8 @@ void OCVProcessor::adjustContoursFit(OCVItemPrivateResult* itemResult, std::vect
                 float secondWidth = secondMaxPoint.x - secondMinPoint.x;
                 float firstHeight = firstMaxPoint.y - firstMinPoint.y;
                 float secondHeight = secondMaxPoint.y - secondMinPoint.y;
-                BOOL canScaleWidth = firstWidth > zeroDiff && secondWidth > zeroDiff;
-                BOOL canScaleHeight = firstHeight > zeroDiff && secondHeight > zeroDiff;
+                bool canScaleWidth = firstWidth > zeroDiff && secondWidth > zeroDiff;
+                bool canScaleHeight = firstHeight > zeroDiff && secondHeight > zeroDiff;
                 float xScale = canScaleWidth ? firstWidth / secondWidth : 1;
                 float yScale = canScaleHeight ? firstHeight / secondHeight : 1;
                 if (canScaleWidth && !canScaleHeight) { yScale = xScale; }

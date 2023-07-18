@@ -11,7 +11,7 @@
 #ifdef __APPLE__
 #import <opencv2/opencv2.h>
 #elif __ANDROID__
-#include <opencv2/core.hpp>
+#include <opencv2/opencv.hpp>
 #endif
 
 struct OCVContour {
