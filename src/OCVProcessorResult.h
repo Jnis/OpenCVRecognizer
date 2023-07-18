@@ -8,7 +8,11 @@
 #ifndef OCVProcessorResult_h
 #define OCVProcessorResult_h
 
+#ifdef __APPLE__
 #import <opencv2/opencv2.h>
+#elif __ANDROID__
+#include <opencv2/core.hpp>
+#endif
 
 struct OCVItemResult {
     std::string key;

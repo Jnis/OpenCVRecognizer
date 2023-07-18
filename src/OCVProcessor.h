@@ -17,7 +17,8 @@
 #import "OCVProcessorImageModel.h"
 #import "OCVProcessorSettings.h"
 #import "OCVProcessorResult.h"
-#import <opencv2/opencv2.h>
+#import "OCVHungarianAlgorithm.h"
+
 class OCVItemPrivateResult;
 class OCVPrivateResult;
 
@@ -35,9 +36,12 @@ public:
     
 private:
     void findItemsAndSubimage(OCVPrivateResult& result, cv::Mat &greyscaleImage);
-    void findMistakes(OCVResults& result, OCVPrivateResult& privateResult, std::vector<OCVContour>& ocvContours, bool isDebug);
-    void findMistakes(OCVPrivateResult& result, std::vector<OCVContour> ocvContours);
+    void prepareHungarianMatrix(VVInt& matrix, OCVItemPrivateResult* itemResult, std::vector<OCVContour>& ocvContours);
+    void adjustContours(OCVItemPrivateResult* itemResult, std::vector<OCVContour> &ocvContours, cv::Size ocvContoursMatSize);
+    void findAndFilterByMistakes(OCVResults& result, OCVPrivateResult& privateResult, std::vector<OCVContour>& ocvContours, bool isDebug);
+    int findMistakes(OCVItemPrivateResult* itemResult, std::vector<OCVContour> ocvContours, cv::Size ocvContoursMatSize);
     void debugPreviewResults(OCVResults &result, OCVPrivateResult& privateResult, std::vector<OCVContour> ocvContours);
+    void debugPreview(cv::Mat &debugMat, OCVItemPrivateResult* itemResult, std::vector<OCVContour> ocvContours);
 };
 
 #endif // OCVProcessor_h

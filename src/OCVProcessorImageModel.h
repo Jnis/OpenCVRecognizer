@@ -10,7 +10,6 @@
 
 #import "OCVContour.h"
 #import "OCVProcessorSettings.h"
-#import <opencv2/opencv2.h>
 
 class OCVProcessorImageModel {
 public:
