@@ -16,6 +16,7 @@ struct OCVProcessorSettings {
     float thresholdMin = 0.3; // minimum of % of similarity to additional checking
     
     bool findMistakes = true; // enables find mistakes algorithm: check by polygons
+    bool adjustContoursFit = false;
     float artefactArea = 10; // number of pixels/area to filter contours as artefact
     float radiusKoeff = 0.15; // radius to find polygon
     float maxAreaDifferenceKoeff = 0.6; // area difference to be sure that it is same polygon

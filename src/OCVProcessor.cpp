@@ -108,10 +108,7 @@ void OCVProcessor::prepareHungarianMatrix(VVInt& matrix, OCVItemPrivateResult* i
     }
 }
 
-void OCVProcessor::adjustContours(OCVItemPrivateResult* itemResult, std::vector<OCVContour>& ocvContours, cv::Size ocvContoursMatSize) {
-    float scaleFactor = (float)itemResult->model->originalImageMat.size().width / (float)ocvContoursMatSize.width;
-    scaleContours(ocvContours, scaleFactor, scaleFactor);
-    
+void OCVProcessor::adjustContoursFit(OCVItemPrivateResult* itemResult, std::vector<OCVContour>& ocvContours, cv::Size ocvContoursMatSize) {
     // find paired points
     std::vector<std::pair<int, int>> pairs;
     {
@@ -138,7 +135,7 @@ void OCVProcessor::adjustContours(OCVItemPrivateResult* itemResult, std::vector<
             for (int i = 0; i < ((int)pairs.size()) - 1; i++) {
                 cv::Point firstVector = itemResult->model->ocvContours[pairs[i].first].center - itemResult->model->ocvContours[pairs[i + 1].first].center;
                 cv::Point secondVector = ocvContours[pairs[i].second].center - ocvContours[pairs[i + 1].second].center;
-                if (firstVector.x != 0 && firstVector.y != 0 && secondVector.x != 0 && secondVector.y != 0) {
+                if ((firstVector.x != 0 || firstVector.y != 0) && (secondVector.x != 0 || secondVector.y != 0)) {
                     float firstAngle = angleOfVec2D(firstVector.x, firstVector.y);
                     float secondAngle = angleOfVec2D(secondVector.x, secondVector.y);
                     float angle = firstAngle - secondAngle;
@@ -188,6 +185,14 @@ void OCVProcessor::adjustContours(OCVItemPrivateResult* itemResult, std::vector<
             }
             moveContours(ocvContours, firstMinPoint.x, firstMinPoint.y);
         }
+    }
+}
+
+void OCVProcessor::adjustContours(OCVItemPrivateResult* itemResult, std::vector<OCVContour>& ocvContours, cv::Size ocvContoursMatSize) {
+    float scaleFactor = (float)itemResult->model->originalImageMat.size().width / (float)ocvContoursMatSize.width;
+    scaleContours(ocvContours, scaleFactor, scaleFactor);
+    if (settings.adjustContoursFit) {
+        adjustContoursFit(itemResult, ocvContours, ocvContoursMatSize);
     }
 }
 
