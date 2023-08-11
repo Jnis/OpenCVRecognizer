@@ -14,30 +14,32 @@
 class OCVProcessorImageModel {
 public:
     std::string key;
-    std::vector<cv::Mat> imageMats; // TODO: can we use single image to detect?
+    std::vector<cv::Mat> detectImageMats; 
     cv::Mat originalImageMat;
     std::vector<OCVContour> ocvContours;
     
     OCVProcessorImageModel(std::string key, cv::Mat originalImageMat, OCVProcessorSettings settings) {
         this->key = key;
-        this->originalImageMat = originalImageMat;
         
-        for (int i = 0; i < settings.scales.size(); i++) {
-            float scale = settings.scales[i];
-            float k = (settings.minVideoSize * scale) / originalImageMat.cols;
+        for (int i = 0; i < settings.detectScales.size(); i++) {
+            float scale = settings.detectScales[i];
+            float k = (settings.detectMinVideoSize * scale) / originalImageMat.cols;
             
             cv::Mat resizedMat;
             resize(originalImageMat, resizedMat, cv::Size(originalImageMat.cols * k, originalImageMat.rows * k), cv::INTER_LINEAR);
             cv::cvtColor(resizedMat, resizedMat, cv::COLOR_BGR2GRAY);
-            imageMats.insert(imageMats.end(), resizedMat);
+            detectImageMats.insert(detectImageMats.end(), resizedMat);
         }
         
         cv::cvtColor(originalImageMat, originalImageMat, cv::COLOR_BGR2GRAY);
-        cv::threshold(originalImageMat, originalImageMat, 100, 255, cv::THRESH_BINARY_INV);
-        //        cv::Canny(originalImageMat, originalImageMat, 100,200);
+        this->originalImageMat = originalImageMat;
+        
+        cv::Mat binaryMat;
+        cv::threshold(originalImageMat, binaryMat, 100, 255, cv::THRESH_BINARY_INV);
+        //        cv::Canny(binaryMat, binaryMat, 100,200);
         
         std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(originalImageMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+        cv::findContours(binaryMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
         ocvContours = convertContours(contours);
     }
     

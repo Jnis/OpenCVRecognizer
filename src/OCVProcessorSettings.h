@@ -9,15 +9,22 @@
 #define OCVProcessorSettings_h
 
 struct OCVProcessorSettings {
-    float minVideoSize = 320; // rescale photo to this size. Ex. if 320, 800*600 -> 427*320 or 600*800 -> 320*427
-    std::vector<float> scales = {0.4, 0.3}; // image size to detect (minVideoSize * sale) TODO: is it possible to use 1 image?
+    // crop original image to detect only this area
+    float cropSides = 0.2;
+    float cropCenterX = 0.5;
+    float cropCenterY = 0.4;
     
-    float thresholdFire = 0.7; // % of similarity to start recognition
+    float detectMinVideoSize = 100;
+    std::vector<float> detectScales = {0.4, 0.35, 0.3, 0.25};
+    std::vector<float> detectAngles = {0, -5, 5, -10, 10, -15, 15, -20, 20, -25, 25, -30, 30, -40, 40, -50, 50};
+    
+    float thresholdDetectFire = 0.8; // % of similarity to start detection
+    float thresholdScanFire = 0.6; // % of similarity to start recognition
     float thresholdMin = 0.3; // minimum of % of similarity to additional checking
     
     bool findMistakes = true; // enables find mistakes algorithm: check by polygons
     bool adjustContoursFit = false;
-    float artefactArea = 10; // number of pixels/area to filter contours as artefact
+    float artefactAreaK = 0.001; // number of pixels/area to filter contours as artefact
     float radiusKoeff = 0.15; // radius to find polygon
     float maxAreaDifferenceKoeff = 0.6; // area difference to be sure that it is same polygon
     int maxResults = 4;

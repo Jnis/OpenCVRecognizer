@@ -35,13 +35,14 @@ public:
     OCVResults processImage(cv::Mat originalImageMat, bool isDebug);
     
 private:
-    void findItemsAndSubimage(OCVPrivateResult& result, cv::Mat &greyscaleImage);
+    OCVResults processGreyscaleImage(cv::Mat greyscaleImageMat, bool isDebug);
+    void findItemsAndRect(OCVPrivateResult& result, cv::Mat &greyscaleImage);
     void prepareHungarianMatrix(VVInt& matrix, OCVItemPrivateResult* itemResult, std::vector<OCVContour>& ocvContours);
     void adjustContoursFit(OCVItemPrivateResult* itemResult, std::vector<OCVContour> &ocvContours, cv::Size ocvContoursMatSize);
     void adjustContours(OCVItemPrivateResult* itemResult, std::vector<OCVContour> &ocvContours, cv::Size ocvContoursMatSize);
-    void findAndFilterByMistakes(OCVResults& result, OCVPrivateResult& privateResult, std::vector<OCVContour>& ocvContours, bool isDebug);
+    void findAndFilterByMistakes(OCVPrivateResult& privateResult, std::vector<OCVContour>& ocvContours, cv::Size ocvContoursMatSize);
     int findMistakes(OCVItemPrivateResult* itemResult, std::vector<OCVContour> ocvContours, cv::Size ocvContoursMatSize);
-    void debugPreviewResults(OCVResults &result, OCVPrivateResult& privateResult, std::vector<OCVContour> ocvContours);
+    void debugPreviewResults(OCVResults &result, OCVPrivateResult& privateResult, std::vector<OCVContour> ocvContours, cv::Size ocvContoursMatSize);
     void debugPreview(cv::Mat &debugMat, OCVItemPrivateResult* itemResult, std::vector<OCVContour> ocvContours);
 };
 

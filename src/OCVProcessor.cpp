@@ -33,7 +33,7 @@ public:
 class OCVPrivateResult {
 public:
     std::vector<OCVItemPrivateResult> items;
-    cv::Mat imageMat;
+    cv::Rect rect;
 };
 
 #pragma mark - helpers
@@ -48,13 +48,13 @@ bool compareOCVItemPrivateResult(OCVItemPrivateResult i1, OCVItemPrivateResult i
 
 #pragma mark -
 
-void OCVProcessor::findItemsAndSubimage(OCVPrivateResult& result, cv::Mat &greyscaleImageMat) {
+void OCVProcessor::findItemsAndRect(OCVPrivateResult& result, cv::Mat &greyscaleImageMat) {
     float croppedImageMatThresholdFire = 0;
     
     for (int i = 0; i < models.size(); i++) {
         OCVProcessorImageModel *model = &models[i];
-        for (int scaleIndex = 0; scaleIndex < model->imageMats.size(); scaleIndex++) {
-            cv::Mat testImageMat = model->imageMats[scaleIndex];
+        for (int scaleIndex = 0; scaleIndex < model->detectImageMats.size(); scaleIndex++) {
+            cv::Mat testImageMat = model->detectImageMats[scaleIndex];
             
             cv::Mat res(greyscaleImageMat.rows - testImageMat.rows + 1, greyscaleImageMat.cols - testImageMat.cols + 1, CV_32FC1);
             cv::matchTemplate(greyscaleImageMat, testImageMat, res, cv::TM_CCOEFF_NORMED);
@@ -73,11 +73,10 @@ void OCVProcessor::findItemsAndSubimage(OCVPrivateResult& result, cv::Mat &greys
                 }
                 result.items[result.items.size() - 1].matchPercent = MAX(maxval, result.items[result.items.size() - 1].matchPercent);
                 
-                if (maxval >= settings.thresholdFire && maxval > croppedImageMatThresholdFire) {
-                    OCVLog("DETECTED: %s %i", model->key.c_str(), scaleIndex);
+                if (maxval >= settings.thresholdDetectFire && maxval > croppedImageMatThresholdFire) {
+                    OCVLog("DETECTED: %s %i %.2f", model->key.c_str(), scaleIndex, maxval);
                     croppedImageMatThresholdFire = maxval;
-                    cv::Rect crop(maxloc.x, maxloc.y, testImageMat.cols, testImageMat.rows);
-                    result.imageMat = cv::Mat(greyscaleImageMat, crop);
+                    result.rect = cv::Rect(maxloc.x, maxloc.y, testImageMat.cols, testImageMat.rows);
                 }
             }
         }
@@ -217,27 +216,7 @@ int OCVProcessor::findMistakes(OCVItemPrivateResult* itemResult, std::vector<OCV
     return (int)matrix.size();
 }
 
-void OCVProcessor::findAndFilterByMistakes(OCVResults& result, OCVPrivateResult& privateResult, std::vector<OCVContour>& ocvContours, bool isDebug) {
-    // cv::blur(croppedImageMat, croppedImageMat, cv::Size(3, 3));
-    cv::threshold(privateResult.imageMat, privateResult.imageMat, 130, 255, cv::THRESH_BINARY_INV);
-    // cv::Canny(croppedImageMat, croppedImageMat, 100,200);
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(privateResult.imageMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
-    ocvContours = convertContours(contours);
-    
-    // remove artefacts
-    for (int i = (int)ocvContours.size() - 1; i >= 0 ; i--) {
-        if (ocvContours[i].area < settings.artefactArea) {
-            OCVLog("Contours artefact deleted: area = %.3f", ocvContours[i].area);
-            ocvContours.erase(ocvContours.begin() + i);
-        }
-    }
-    
-    if (isDebug){
-        result.debugMats.insert(result.debugMats.end(), privateResult.imageMat);
-    }
-    
-    cv::Size ocvContoursMatSize = cv::Size(privateResult.imageMat.size().width, privateResult.imageMat.size().height);
+void OCVProcessor::findAndFilterByMistakes(OCVPrivateResult& privateResult, std::vector<OCVContour>& ocvContours, cv::Size ocvContoursMatSize) {
     for (int resultIndex = (int)privateResult.items.size() - 1; resultIndex >= 0; resultIndex--) {
         OCVItemPrivateResult* itemResult = &privateResult.items[resultIndex];
         int matrixSize = findMistakes(itemResult, ocvContours, ocvContoursMatSize);
@@ -251,29 +230,139 @@ void OCVProcessor::findAndFilterByMistakes(OCVResults& result, OCVPrivateResult&
     }
 }
 
-OCVResults OCVProcessor::processImage(cv::Mat originalImageMat, bool isDebug) {
+OCVResults OCVProcessor::processImage(cv::Mat originalMat, bool isDebug) {
+    cv::Mat croppedMat;
+    {
+        int centerX = originalMat.cols * settings.cropCenterX;
+        int centerY = originalMat.rows * settings.cropCenterY;
+        int cropSize = MIN(originalMat.rows, originalMat.cols) * (1 - settings.cropSides * 2);
+        
+        int x = MAX(0, centerX - cropSize * 0.5);
+        int y = MAX(0, centerY - cropSize * 0.5);
+        int width = MIN(originalMat.cols - x, cropSize);
+        int height = MIN(originalMat.rows - y, cropSize);
+        croppedMat = cv::Mat(originalMat, cv::Rect(x, y, width, height));
+    }
+     
     OCVResults result;
-    float k = settings.minVideoSize / MIN(originalImageMat.cols, originalImageMat.rows);
+    float scale = settings.detectMinVideoSize / MIN(croppedMat.cols, croppedMat.rows);
     
-    cv::Mat greyscaleImageMat;
-    cv::resize(originalImageMat, greyscaleImageMat, cv::Size(originalImageMat.cols * k, originalImageMat.rows * k), cv::INTER_LINEAR);
-    cv::cvtColor(greyscaleImageMat, greyscaleImageMat, cv::COLOR_BGR2GRAY);
+    cv::Mat greyscaleMat;
+    cv::cvtColor(croppedMat, greyscaleMat, cv::COLOR_BGR2GRAY);
+    
+    for (int i = 0; i < settings.detectAngles.size(); i++) {
+        float angle = settings.detectAngles[i];
+        cv::Mat rotatedSmallMat;
+        cv::Point2f pt(greyscaleMat.cols/2., greyscaleMat.rows/2.);
+        cv::Mat r = getRotationMatrix2D(pt, angle, 1.0);
+        cv::warpAffine(greyscaleMat, rotatedSmallMat, r, cv::Size(greyscaleMat.cols, greyscaleMat.rows));
+        cv::resize(rotatedSmallMat, rotatedSmallMat, cv::Size(rotatedSmallMat.cols * scale, rotatedSmallMat.rows * scale), cv::INTER_LINEAR);
+        
+        OCVPrivateResult privateResult;
+        findItemsAndRect(privateResult, rotatedSmallMat);
+        
+        if (privateResult.items.size() > 0 && privateResult.rect.width > 0 && privateResult.rect.height > 0) {
+            cv::Mat greyscaleRotatedMat;
+            cv::Point2f pt(croppedMat.cols/2., croppedMat.rows/2.);
+            cv::Mat r = getRotationMatrix2D(pt, angle, 1.0);
+            cv::warpAffine(croppedMat, greyscaleRotatedMat, r, cv::Size(croppedMat.cols, croppedMat.rows));
+            
+            int x = privateResult.rect.x / scale;
+            int y = privateResult.rect.y / scale;
+            int width = privateResult.rect.width / scale;
+            int height = privateResult.rect.height / scale;
+            greyscaleRotatedMat = cv::Mat(greyscaleRotatedMat, cv::Rect(x, y, width, height));
+            
+            cv::cvtColor(greyscaleRotatedMat, greyscaleRotatedMat, cv::COLOR_BGR2GRAY);
+            
+            result = processGreyscaleImage(greyscaleRotatedMat, isDebug);
+            
+            if (result.items.size() > 0) {
+                OCVLog("ANGLE: %.0f", angle);
+                if (isDebug){
+                    cv::Mat mat = cv::Mat(rotatedSmallMat, privateResult.rect);
+                    result.debugMats.insert(result.debugMats.begin(), mat);
+                    result.debugMats.insert(result.debugMats.begin(), rotatedSmallMat);
+                    result.debugMats.insert(result.debugMats.begin(), croppedMat);
+                }
+                break;
+            }
+        }
+    }
+    return result;
+}
+
+OCVResults OCVProcessor::processGreyscaleImage(cv::Mat greyscaleImageMat, bool isDebug) {
+    OCVResults result;
+    
+    if (isDebug){
+        cv::Mat copyMat;
+        greyscaleImageMat.copyTo(copyMat);
+        result.debugMats.insert(result.debugMats.end(), copyMat);
+    }
     
     // 1. try to find an Image on the photo and Rect for it
     OCVPrivateResult privateResult;
-    findItemsAndSubimage(privateResult, greyscaleImageMat);
+    float croppedImageMatThresholdFire = 0;
+    for (int i = 0; i < models.size(); i++) {
+        OCVProcessorImageModel *model = &models[i];
+        cv::Mat testImageMat = model->originalImageMat;
+        
+        cv::Mat resizedMat;
+        cv::resize(greyscaleImageMat, resizedMat, cv::Size(testImageMat.cols, testImageMat.rows), cv::INTER_LINEAR);
+//        cv::cvtColor(resizedMat, resizedMat, cv::COLOR_BGR2GRAY);
+        
+        cv::Mat res(resizedMat.rows - testImageMat.rows + 1, resizedMat.cols - testImageMat.cols + 1, CV_32FC1);
+        cv::matchTemplate(resizedMat, testImageMat, res, cv::TM_CCOEFF_NORMED);
+        cv::threshold(res, res, settings.thresholdMin, 1., cv::THRESH_TOZERO);
+        
+        double minval, maxval;
+        cv::Point minloc, maxloc;
+        cv::minMaxLoc(res, &minval, &maxval, &minloc, &maxloc);
+        
+        if (maxval >= settings.thresholdMin) {
+//            OCVLog("%s, %lf %lf", model->key.c_str(), minval, maxval);
+            
+            if (privateResult.items.size() == 0 || privateResult.items[privateResult.items.size() - 1].model != model) {
+                OCVItemPrivateResult item(model);
+                privateResult.items.insert(privateResult.items.end(), item);
+            }
+            privateResult.items[privateResult.items.size() - 1].matchPercent = MAX(maxval, privateResult.items[privateResult.items.size() - 1].matchPercent);
+            if (maxval >= settings.thresholdScanFire && maxval > croppedImageMatThresholdFire) {
+//                OCVLog("DETECTED: %s", model->key.c_str());
+                croppedImageMatThresholdFire = maxval;
+                privateResult.rect = cv::Rect(maxloc.x, maxloc.y, testImageMat.cols, testImageMat.rows);
+            }
+        }
+    }
     
     // 2. compare contours for every Image and cropped photo
-    if (privateResult.imageMat.data != NULL) {
-        if (isDebug){
-            cv::Mat copyMat;
-            privateResult.imageMat.copyTo(copyMat);
-            result.debugMats.insert(result.debugMats.end(), copyMat);
-        }
-        
+    if (privateResult.items.size() > 0 && privateResult.rect.width > 0 && privateResult.rect.height > 0) {
         std::vector<OCVContour> ocvContours;
+        cv::Size ocvContoursMatSize;
         if (settings.findMistakes) {
-            findAndFilterByMistakes(result, privateResult, ocvContours, isDebug);
+            // cv::blur(croppedImageMat, croppedImageMat, cv::Size(3, 3));
+            cv::threshold(greyscaleImageMat, greyscaleImageMat, 130, 255, cv::THRESH_BINARY_INV);
+            // cv::Canny(croppedImageMat, croppedImageMat, 100,200);
+            std::vector<std::vector<cv::Point>> contours;
+            cv::findContours(greyscaleImageMat, contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
+            ocvContours = convertContours(contours);
+            
+            // remove artefacts
+            float artefactsArea = greyscaleImageMat.cols * greyscaleImageMat.rows * settings.artefactAreaK;
+            for (int i = (int)ocvContours.size() - 1; i >= 0 ; i--) {
+                if (ocvContours[i].area < artefactsArea) {
+                    OCVLog("Contours artefact deleted: area = %.1f < %.1f", ocvContours[i].area, artefactsArea);
+                    ocvContours.erase(ocvContours.begin() + i);
+                }
+            }
+            
+            if (isDebug){
+                result.debugMats.insert(result.debugMats.end(), greyscaleImageMat);
+            }
+            
+            ocvContoursMatSize = cv::Size(greyscaleImageMat.size().width, greyscaleImageMat.size().height);
+            findAndFilterByMistakes(privateResult, ocvContours, ocvContoursMatSize);
         }
         
         std::sort(privateResult.items.begin(), privateResult.items.end(), compareOCVItemPrivateResult);
@@ -285,7 +374,7 @@ OCVResults OCVProcessor::processImage(cv::Mat originalImageMat, bool isDebug) {
         
         if (isDebug){
             if (settings.findMistakes) {
-                debugPreviewResults(result, privateResult, ocvContours);
+                debugPreviewResults(result, privateResult, ocvContours, ocvContoursMatSize);
             }
         }
         
@@ -341,8 +430,7 @@ void OCVProcessor::debugPreview(cv::Mat &debugMat, OCVItemPrivateResult* itemRes
     }
 }
 
-void OCVProcessor::debugPreviewResults(OCVResults &result, OCVPrivateResult& privateResult, std::vector<OCVContour> ocvContours) {
-    cv::Size ocvContoursMatSize = cv::Size(privateResult.imageMat.size().width, privateResult.imageMat.size().height);
+void OCVProcessor::debugPreviewResults(OCVResults &result, OCVPrivateResult& privateResult, std::vector<OCVContour> ocvContours, cv::Size ocvContoursMatSize) {
     for (int resultIndex = 0; resultIndex < privateResult.items.size(); resultIndex++) {
         OCVItemPrivateResult* itemResult = &privateResult.items[resultIndex];
         std::vector<OCVContour> ocvContoursFixed = ocvContours;
